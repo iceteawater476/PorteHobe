@@ -1,0 +1,1055 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PorteHobe - University Study Manager</title>
+    <!-- System constraint: Tailwind is required for layout robustness, but heavily customized via CSS variables -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #f8fafc;
+            --bg-secondary: #ffffff;
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --accent: #4f46e5;
+            --accent-hover: #4338ca;
+            --border: #e2e8f0;
+            --sidebar-w: 260px;
+            --danger: #ef4444;
+            --success: #10b981;
+        }
+
+        .dark {
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --border: #334155;
+        }
+
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            transition: background-color 0.3s ease, color 0.3s ease;
+            margin: 0;
+            overflow-x: hidden;
+        }
+
+        /* Custom UI Elements & Smooth Transitions */
+        .card {
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        
+        .card:hover {
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+
+        .input-field {
+            background-color: var(--bg-primary);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            width: 100%;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .input-field:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
+        }
+
+        .btn-primary {
+            background-color: var(--accent);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 500;
+            transition: background-color 0.2s ease, transform 0.1s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            cursor: pointer;
+            border: none;
+        }
+
+        .btn-primary:hover { background-color: var(--accent-hover); }
+        .btn-primary:active { transform: scale(0.98); }
+
+        .btn-secondary {
+            background-color: transparent;
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .btn-secondary:hover { background-color: var(--border); }
+
+        /* Toast Notifications */
+        #toast-container {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .toast {
+            background-color: var(--bg-secondary);
+            border-left: 4px solid var(--accent);
+            color: var(--text-primary);
+            padding: 1rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            animation: slideIn 0.3s ease forwards, fadeOut 0.3s ease 3s forwards;
+            min-width: 250px;
+        }
+        .toast.error { border-left-color: var(--danger); }
+        .toast.success { border-left-color: var(--success); }
+
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
+
+        /* Chart Styles */
+        .chart-bar-container { height: 200px; display: flex; align-items: flex-end; gap: 8px; padding-top: 20px; border-bottom: 1px solid var(--border); }
+        .chart-bar { background-color: var(--accent); border-radius: 4px 4px 0 0; width: 100%; transition: height 0.5s ease; position: relative; }
+        .chart-bar:hover::after {
+            content: attr(data-value);
+            position: absolute;
+            top: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--bg-secondary);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 12px;
+            border: 1px solid var(--border);
+            white-space: nowrap;
+        }
+
+        /* Layout */
+        .app-layout { display: flex; height: 100vh; overflow: hidden; }
+        .sidebar { width: var(--sidebar-w); background-color: var(--bg-secondary); border-right: 1px solid var(--border); display: flex; flex-direction: column; transition: transform 0.3s ease; }
+        .main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+        .topbar { height: 64px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 2rem; background-color: var(--bg-secondary); }
+        .content-area { flex: 1; overflow-y: auto; padding: 2rem; }
+        
+        .nav-item { padding: 0.75rem 1.5rem; display: flex; align-items: center; gap: 1rem; color: var(--text-secondary); transition: all 0.2s ease; cursor: pointer; border-left: 3px solid transparent; }
+        .nav-item:hover, .nav-item.active { background-color: rgba(79, 70, 229, 0.05); color: var(--accent); border-left-color: var(--accent); }
+
+        /* Hide elements */
+        .hidden-view { display: none !important; }
+
+        /* Mobile overrides */
+        @media (max-width: 768px) {
+            .app-layout { flex-direction: column; }
+            .sidebar { position: fixed; top: 0; left: -100%; height: 100%; z-index: 50; }
+            .sidebar.open { left: 0; }
+            .mobile-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 40; }
+            .mobile-overlay.active { display: block; }
+        }
+    </style>
+</head>
+<body>
+    <div id="toast-container"></div>
+    <div id="mobile-overlay" class="mobile-overlay" onclick="toggleSidebar()"></div>
+
+    <div id="auth-view" class="h-screen w-screen flex items-center justify-center p-4">
+        <div class="card p-8 max-w-md w-full">
+            <div class="text-center mb-8">
+                <i class="fa-solid fa-book-open text-4xl mb-4" style="color: var(--accent)"></i>
+                <h1 class="text-2xl font-bold">PorteHobe</h1>
+                <p class="text-sm mt-2" style="color: var(--text-secondary)">Manage your coursework & materials</p>
+            </div>
+            
+            <form id="auth-form" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium mb-1">Email</label>
+                    <input type="email" id="auth-email" class="input-field" required placeholder="you@university.edu">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Password</label>
+                    <input type="password" id="auth-password" class="input-field" required placeholder="••••••••">
+                </div>
+                <button type="submit" class="btn-primary w-full" id="auth-btn">Sign In / Register</button>
+            </form>
+
+            <div class="mt-6 border-t pt-6" style="border-color: var(--border)">
+                <button id="google-login-btn" class="btn-secondary w-full flex items-center justify-center gap-2">
+                    <i class="fa-brands fa-google"></i> Continue with Google
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="onboarding-view" class="h-screen w-screen flex items-center justify-center p-4 hidden-view">
+        <div class="card p-8 max-w-md w-full">
+            <h2 class="text-2xl font-bold mb-2">Welcome to PorteHobe!</h2>
+            <p class="mb-6 text-sm" style="color: var(--text-secondary)">Let's set up your profile before we begin.</p>
+            
+            <form id="onboarding-form" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium mb-1">Display Name</label>
+                    <input type="text" id="profile-name" class="input-field" required placeholder="Alice">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Class Group Code</label>
+                    <p class="text-xs mb-2" style="color: var(--text-secondary)">This scopes the shared materials you see (e.g., CS-2026-A). Ask your classmates for the code, or create a new one.</p>
+                    <input type="text" id="profile-group" class="input-field" required placeholder="CS-2026-A">
+                </div>
+                <button type="submit" class="btn-primary w-full">Complete Setup</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="app-view" class="app-layout hidden-view">
+        <!-- Sidebar -->
+        <aside id="sidebar" class="sidebar">
+            <div class="p-6 flex items-center gap-3 border-b" style="border-color: var(--border)">
+                <i class="fa-solid fa-book-open text-2xl" style="color: var(--accent)"></i>
+                <span class="font-bold text-lg">PorteHobe</span>
+            </div>
+            <nav class="flex-1 py-4 flex flex-col gap-1">
+                <a class="nav-item active" data-view="dashboard" onclick="navigate('dashboard')"><i class="fa-solid fa-house w-6"></i> Dashboard</a>
+                <a class="nav-item" data-view="courses" onclick="navigate('courses')"><i class="fa-solid fa-graduation-cap w-6"></i> Courses & Logs</a>
+                <a class="nav-item" data-view="materials" onclick="navigate('materials')"><i class="fa-solid fa-folder w-6"></i> My Materials</a>
+                <a class="nav-item" data-view="shared" onclick="navigate('shared')"><i class="fa-solid fa-users w-6"></i> Shared Group</a>
+                <a class="nav-item" data-view="timer" onclick="navigate('timer')"><i class="fa-solid fa-stopwatch w-6"></i> Study Timer</a>
+                <a class="nav-item" data-view="notes" onclick="navigate('notes')"><i class="fa-solid fa-pen-to-square w-6"></i> My Notes</a>
+            </nav>
+            <div class="p-4 border-t" style="border-color: var(--border)">
+                <div class="text-sm font-medium mb-1 truncate" id="user-display-name">User Name</div>
+                <div class="text-xs truncate mb-4" id="user-group-code" style="color: var(--text-secondary)">Group: --</div>
+                <button onclick="logout()" class="text-sm flex items-center gap-2" style="color: var(--danger)">
+                    <i class="fa-solid fa-arrow-right-from-bracket"></i> Sign Out
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="topbar">
+                <button class="md:hidden p-2" onclick="toggleSidebar()">
+                    <i class="fa-solid fa-bars text-xl"></i>
+                </button>
+                <div class="flex-1"></div>
+                <button onclick="toggleTheme()" class="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition" title="Toggle Theme">
+                    <i class="fa-solid fa-moon text-xl dark:hidden"></i>
+                    <i class="fa-solid fa-sun text-xl hidden dark:block" style="color: #fbbf24"></i>
+                </button>
+            </header>
+
+            <div class="content-area" id="main-content-area">
+                
+                <section id="view-dashboard" class="view-section">
+                    <h2 class="text-3xl font-bold mb-6">Dashboard</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                        <div class="card p-6">
+                            <h3 class="text-sm font-medium" style="color: var(--text-secondary)">Total Study Time (Week)</h3>
+                            <div class="text-3xl font-bold mt-2" id="dash-time">0 mins</div>
+                        </div>
+                        <div class="card p-6">
+                            <h3 class="text-sm font-medium" style="color: var(--text-secondary)">Active Courses</h3>
+                            <div class="text-3xl font-bold mt-2" id="dash-courses">0</div>
+                        </div>
+                        <div class="card p-6">
+                            <h3 class="text-sm font-medium" style="color: var(--text-secondary)">Group Shared Files</h3>
+                            <div class="text-3xl font-bold mt-2" id="dash-shared">0</div>
+                        </div>
+                    </div>
+                    <div class="card p-6 w-full">
+                        <h3 class="text-lg font-bold mb-4">Study Progress (Last 7 Days)</h3>
+                        <div class="chart-bar-container" id="study-chart">
+                            <!-- Chart injected via JS -->
+                        </div>
+                        <div class="flex justify-between mt-2 text-xs" style="color: var(--text-secondary)" id="chart-labels">
+                            <!-- Labels injected via JS -->
+                        </div>
+                    </div>
+                </section>
+
+                <section id="view-courses" class="view-section hidden-view">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-3xl font-bold">Courses & Faculty Tracker</h2>
+                        <button class="btn-primary text-sm" onclick="showModal('course-modal')"><i class="fa-solid fa-plus"></i> Add Course</button>
+                    </div>
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div class="lg:col-span-1 flex flex-col gap-4" id="courses-list">
+                            <!-- Course buttons injected here -->
+                        </div>
+                        <div class="lg:col-span-2 card p-6" id="faculty-log-area">
+                            <div class="text-center py-10" style="color: var(--text-secondary)" id="no-course-selected">
+                                Select a course to view or add faculty logs.
+                            </div>
+                            <div id="course-logs-container" class="hidden-view">
+                                <div class="flex justify-between items-center mb-4">
+                                    <h3 class="text-xl font-bold" id="selected-course-title">Course Name</h3>
+                                    <button class="btn-primary text-sm" onclick="showModal('log-modal')">Log Class</button>
+                                </div>
+                                <div class="space-y-4" id="logs-list">
+                                    <!-- Logs injected here -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="view-materials" class="view-section hidden-view">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-3xl font-bold">My Materials</h2>
+                        <button class="btn-primary text-sm" onclick="showModal('material-modal')"><i class="fa-solid fa-upload"></i> Upload</button>
+                    </div>
+                    <p class="text-sm mb-6" style="color: var(--text-secondary)">Manage your personal files. Choose to keep them private or share them with your class group.</p>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="my-materials-list">
+                        <!-- Materials injected here -->
+                    </div>
+                </section>
+
+                <section id="view-shared" class="view-section hidden-view">
+                    <h2 class="text-3xl font-bold mb-2">Shared Group Materials</h2>
+                    <p class="text-sm mb-6" style="color: var(--text-secondary)">
+                        Showing resources shared with group: <strong id="shared-group-label" class="text-accent"></strong>
+                    </p>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="shared-materials-list">
+                        <!-- Shared Materials injected here -->
+                    </div>
+                </section>
+
+                <section id="view-timer" class="view-section hidden-view">
+                    <h2 class="text-3xl font-bold mb-6">Study Timer</h2>
+                    <div class="card p-8 text-center max-w-lg mx-auto">
+                        <div class="text-6xl font-mono font-bold mb-8" id="timer-display" style="color: var(--accent)">00:00:00</div>
+                        
+                        <div class="mb-6 text-left">
+                            <label class="block text-sm font-medium mb-1">Select Course</label>
+                            <select id="timer-course-select" class="input-field">
+                                <option value="">General Study</option>
+                            </select>
+                        </div>
+
+                        <div class="flex gap-4 justify-center">
+                            <button id="btn-start-timer" class="btn-primary" onclick="startTimer()"><i class="fa-solid fa-play"></i> Start</button>
+                            <button id="btn-pause-timer" class="btn-secondary hidden-view" onclick="pauseTimer()"><i class="fa-solid fa-pause"></i> Pause</button>
+                            <button id="btn-stop-timer" class="btn-secondary hidden-view" onclick="stopTimer()" style="color: var(--danger); border-color: var(--danger)"><i class="fa-solid fa-stop"></i> Stop & Save</button>
+                        </div>
+                    </div>
+
+                    <div class="mt-8">
+                        <h3 class="text-xl font-bold mb-4">Recent Sessions (Private)</h3>
+                        <div class="card p-4">
+                            <table class="w-full text-left text-sm">
+                                <thead>
+                                    <tr style="border-bottom: 1px solid var(--border); color: var(--text-secondary)">
+                                        <th class="pb-2">Date</th>
+                                        <th class="pb-2">Course</th>
+                                        <th class="pb-2">Duration</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="study-sessions-list">
+                                    <!-- Sessions injected here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="view-notes" class="view-section hidden-view">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-3xl font-bold">My Notes</h2>
+                        <button class="btn-primary text-sm" onclick="showModal('note-modal')"><i class="fa-solid fa-plus"></i> New Note</button>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="notes-list">
+                        <!-- Notes injected here -->
+                    </div>
+                </section>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- Modals Overlay -->
+    <div id="modal-overlay" class="fixed inset-0 bg-black/50 hidden-view z-50 flex items-center justify-center p-4 backdrop-blur-sm transition-opacity">
+        
+        <!-- Add Course Modal -->
+        <div id="course-modal" class="card w-full max-w-md p-6 hidden-view relative">
+            <button onclick="hideModals()" class="absolute top-4 right-4 text-gray-500 hover:text-gray-800 dark:hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+            <h3 class="text-xl font-bold mb-4">Add Course</h3>
+            <form id="form-course" class="space-y-4">
+                <input type="text" id="course-name" class="input-field" placeholder="Course Name (e.g. Data Structures)" required>
+                <input type="text" id="course-code" class="input-field" placeholder="Course Code (e.g. CS201)" required>
+                <button type="submit" class="btn-primary w-full">Save Course</button>
+            </form>
+        </div>
+
+        <!-- Add Log Modal -->
+        <div id="log-modal" class="card w-full max-w-md p-6 hidden-view relative">
+            <button onclick="hideModals()" class="absolute top-4 right-4 text-gray-500 hover:text-gray-800 dark:hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+            <h3 class="text-xl font-bold mb-4">Log Faculty Class</h3>
+            <form id="form-log" class="space-y-4">
+                <input type="date" id="log-date" class="input-field" required>
+                <input type="text" id="log-topic" class="input-field" placeholder="Topic Covered" required>
+                <textarea id="log-notes" class="input-field" placeholder="Short notes / Reminders (Private)" rows="3"></textarea>
+                <button type="submit" class="btn-primary w-full">Save Log</button>
+            </form>
+        </div>
+
+        <!-- Add Material Modal -->
+        <div id="material-modal" class="card w-full max-w-md p-6 hidden-view relative">
+            <button onclick="hideModals()" class="absolute top-4 right-4 text-gray-500 hover:text-gray-800 dark:hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+            <h3 class="text-xl font-bold mb-4">Upload Material</h3>
+            <form id="form-material" class="space-y-4">
+                <input type="text" id="mat-title" class="input-field" placeholder="Material Title" required>
+                <select id="mat-course" class="input-field" required>
+                    <option value="">Select Course</option>
+                </select>
+                <input type="file" id="mat-file" class="input-field p-2" required>
+                
+                <div class="flex items-center gap-3 p-3 border rounded-lg" style="border-color: var(--border)">
+                    <input type="checkbox" id="mat-shared" class="w-5 h-5 accent-indigo-600 cursor-pointer">
+                    <div>
+                        <label for="mat-shared" class="font-medium cursor-pointer">Share with Class Group</label>
+                        <p class="text-xs" style="color: var(--text-secondary)">If checked, others in your group code can download this.</p>
+                    </div>
+                </div>
+                <button type="submit" class="btn-primary w-full" id="mat-submit-btn">Upload</button>
+            </form>
+        </div>
+
+        <!-- Add Note Modal -->
+        <div id="note-modal" class="card w-full max-w-lg p-6 hidden-view relative">
+            <button onclick="hideModals()" class="absolute top-4 right-4 text-gray-500 hover:text-gray-800 dark:hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+            <h3 class="text-xl font-bold mb-4">New Note (Private)</h3>
+            <form id="form-note" class="space-y-4">
+                <input type="text" id="note-title" class="input-field" placeholder="Note Title" required>
+                <select id="note-course" class="input-field">
+                    <option value="">General (No Course)</option>
+                </select>
+                <textarea id="note-content" class="input-field" placeholder="Start typing your notes here..." rows="6" required></textarea>
+                <button type="submit" class="btn-primary w-full">Save Note</button>
+            </form>
+        </div>
+    </div>
+
+    <script type="module">
+        // Firebase Setup & Imports
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, doc, setDoc, getDoc, addDoc, deleteDoc, onSnapshot, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
+
+        // Environment Configuration
+        // In a real project, replace these placeholders with your Firebase config.
+        // The app uses the Immersive environment config if available.
+        const defaultFirebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_AUTH_DOMAIN",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_STORAGE_BUCKET",
+            messagingSenderId: "YOUR_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
+        
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : defaultFirebaseConfig;
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'studytrack-default';
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        let storage;
+        try { storage = getStorage(app); } catch(e) { console.warn("Storage not configured."); }
+
+        // Application State
+        let currentUser = null;
+        let userProfile = null;
+        let state = {
+            courses: [],
+            facultyLogs: [],
+            materials: [],
+            sharedMaterials: [],
+            notes: [],
+            studySessions: [],
+            unsubs: [],
+            selectedCourseId: null,
+            timer: { interval: null, seconds: 0, isRunning: false }
+        };
+
+        // Utility: UI Helpers
+        window.showToast = (msg, type = 'info') => {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.innerHTML = `<i class="fa-solid ${type === 'error' ? 'fa-circle-exclamation' : type === 'success' ? 'fa-check-circle' : 'fa-info-circle'} mr-2"></i> ${msg}`;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 3500);
+        };
+
+        window.toggleTheme = () => {
+            document.documentElement.classList.toggle('dark');
+            localStorage.setItem('theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light');
+        };
+
+        window.toggleSidebar = () => {
+            document.getElementById('sidebar').classList.toggle('open');
+            document.getElementById('mobile-overlay').classList.toggle('active');
+        };
+
+        window.navigate = (viewId) => {
+            document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden-view'));
+            document.getElementById(`view-${viewId}`).classList.remove('hidden-view');
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            document.querySelector(`.nav-item[data-view="${viewId}"]`).classList.add('active');
+            
+            if (window.innerWidth <= 768 && document.getElementById('sidebar').classList.contains('open')) {
+                toggleSidebar();
+            }
+            if(viewId === 'dashboard') renderDashboard();
+        };
+
+        window.showModal = (modalId) => {
+            document.getElementById('modal-overlay').classList.remove('hidden-view');
+            document.querySelectorAll('#modal-overlay .card').forEach(c => c.classList.add('hidden-view'));
+            document.getElementById(modalId).classList.remove('hidden-view');
+        };
+
+        window.hideModals = () => {
+            document.getElementById('modal-overlay').classList.add('hidden-view');
+            document.querySelectorAll('form').forEach(f => f.reset());
+        };
+
+        // Initialize Theme
+        if (localStorage.getItem('theme') === 'light') {
+            document.documentElement.classList.remove('dark');
+        }
+
+        document.getElementById('auth-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('auth-btn');
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Processing...';
+            btn.disabled = true;
+            
+            const email = document.getElementById('auth-email').value;
+            const password = document.getElementById('auth-password').value;
+
+            try {
+                try {
+                    await signInWithEmailAndPassword(auth, email, password);
+                } catch (err) {
+                    if (err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential') {
+                        await createUserWithEmailAndPassword(auth, email, password);
+                        showToast("Account created successfully!", "success");
+                    } else {
+                        throw err;
+                    }
+                }
+            } catch (error) {
+                showToast(error.message.replace('Firebase: ', ''), 'error');
+                btn.innerHTML = 'Sign In / Register';
+                btn.disabled = false;
+            }
+        });
+
+        document.getElementById('google-login-btn').addEventListener('click', async () => {
+            const provider = new GoogleAuthProvider();
+            try {
+                await signInWithPopup(auth, provider);
+            } catch (error) {
+                showToast("Google sign-in failed.", 'error');
+            }
+        });
+
+        window.logout = async () => {
+            stopTimer();
+            state.unsubs.forEach(unsub => unsub());
+            state.unsubs = [];
+            await signOut(auth);
+        };
+
+        async function initAuth() {
+            if (initialAuthToken) {
+                try {
+                    await signInWithCustomToken(auth, initialAuthToken);
+                } catch(e) {
+                    console.error("Custom token auth failed", e);
+                }
+            }
+
+            onAuthStateChanged(auth, async (user) => {
+                currentUser = user;
+                if (user) {
+                    document.getElementById('auth-view').classList.add('hidden-view');
+                    await checkProfileAndLoad();
+                } else {
+                    document.getElementById('app-view').classList.add('hidden-view');
+                    document.getElementById('onboarding-view').classList.add('hidden-view');
+                    document.getElementById('auth-view').classList.remove('hidden-view');
+                    document.getElementById('auth-btn').innerHTML = 'Sign In / Register';
+                    document.getElementById('auth-btn').disabled = false;
+                }
+            });
+        }
+
+        // CRITICAL: Strictly following system mandated paths
+        const getPrivateRef = (collectionName) => collection(db, 'artifacts', appId, 'users', currentUser.uid, collectionName);
+        const getPublicRef = (collectionName) => collection(db, 'artifacts', appId, 'public', 'data', collectionName);
+        
+        async function checkProfileAndLoad() {
+            if (!currentUser) return;
+            const profileRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'profile', 'data');
+            
+            try {
+                const docSnap = await getDoc(profileRef);
+                if (docSnap.exists()) {
+                    userProfile = docSnap.data();
+                    document.getElementById('onboarding-view').classList.add('hidden-view');
+                    startApp();
+                } else {
+                    document.getElementById('onboarding-view').classList.remove('hidden-view');
+                }
+            } catch (e) {
+                showToast("Error checking profile.", "error");
+            }
+        }
+
+        document.getElementById('onboarding-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = document.getElementById('profile-name').value.trim();
+            const group = document.getElementById('profile-group').value.trim().toUpperCase();
+            
+            if(!currentUser) return;
+            try {
+                const profileRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'profile', 'data');
+                await setDoc(profileRef, { displayName: name, groupCode: group, createdAt: new Date().toISOString() });
+                userProfile = { displayName: name, groupCode: group };
+                document.getElementById('onboarding-view').classList.add('hidden-view');
+                startApp();
+            } catch (e) {
+                showToast("Failed to save profile.", "error");
+            }
+        });
+
+        function startApp() {
+            document.getElementById('app-view').classList.remove('hidden-view');
+            document.getElementById('user-display-name').textContent = userProfile.displayName;
+            document.getElementById('user-group-code').textContent = `Group: ${userProfile.groupCode}`;
+            document.getElementById('shared-group-label').textContent = userProfile.groupCode;
+            
+            bindDataListeners();
+            navigate('dashboard');
+        }
+
+        function bindDataListeners() {
+            if (!currentUser) return;
+            
+            // Unsubscribe existing
+            state.unsubs.forEach(u => u());
+            state.unsubs = [];
+
+            const handleError = (err) => { console.error(err); showToast("Sync error.", "error"); };
+
+            // Private Collections
+            state.unsubs.push(onSnapshot(getPrivateRef('courses'), (snap) => {
+                state.courses = snap.docs.map(d => ({id: d.id, ...d.data()}));
+                updateCourseSelects();
+                renderCourses();
+                renderDashboard();
+            }, handleError));
+
+            state.unsubs.push(onSnapshot(getPrivateRef('facultyLogs'), (snap) => {
+                state.facultyLogs = snap.docs.map(d => ({id: d.id, ...d.data()}));
+                if(state.selectedCourseId) renderLogs(state.selectedCourseId);
+            }, handleError));
+
+            state.unsubs.push(onSnapshot(getPrivateRef('materials'), (snap) => {
+                state.materials = snap.docs.map(d => ({id: d.id, ...d.data()}));
+                renderMyMaterials();
+            }, handleError));
+
+            state.unsubs.push(onSnapshot(getPrivateRef('notes'), (snap) => {
+                state.notes = snap.docs.map(d => ({id: d.id, ...d.data()}));
+                renderNotes();
+            }, handleError));
+
+            state.unsubs.push(onSnapshot(getPrivateRef('studySessions'), (snap) => {
+                state.studySessions = snap.docs.map(d => ({id: d.id, ...d.data()}));
+                renderStudySessions();
+                renderDashboard();
+            }, handleError));
+
+            // Public Collection (Filtered in memory per system constraint against complex queries)
+            state.unsubs.push(onSnapshot(getPublicRef('materials'), (snap) => {
+                const allShared = snap.docs.map(d => ({id: d.id, ...d.data()}));
+                state.sharedMaterials = allShared.filter(m => m.groupCode === userProfile.groupCode);
+                renderSharedMaterials();
+                renderDashboard();
+            }, handleError));
+        }
+
+        document.getElementById('form-course').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = e.target.querySelector('button');
+            btn.disabled = true;
+            try {
+                await addDoc(getPrivateRef('courses'), {
+                    name: document.getElementById('course-name').value,
+                    code: document.getElementById('course-code').value.toUpperCase(),
+                    createdAt: Date.now()
+                });
+                hideModals();
+                showToast("Course added", "success");
+            } catch(e) { showToast("Error adding course", "error"); }
+            finally { btn.disabled = false; }
+        });
+
+        function renderCourses() {
+            const container = document.getElementById('courses-list');
+            container.innerHTML = state.courses.length === 0 ? 
+                '<p class="text-sm" style="color: var(--text-secondary)">No courses added yet.</p>' : '';
+            
+            state.courses.forEach(course => {
+                const div = document.createElement('div');
+                div.className = `card p-4 cursor-pointer transition ${state.selectedCourseId === course.id ? 'ring-2 ring-indigo-500' : ''}`;
+                div.onclick = () => selectCourse(course);
+                div.innerHTML = `
+                    <div class="font-bold">${course.code}</div>
+                    <div class="text-sm" style="color: var(--text-secondary)">${course.name}</div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function selectCourse(course) {
+            state.selectedCourseId = course.id;
+            document.getElementById('no-course-selected').classList.add('hidden-view');
+            document.getElementById('course-logs-container').classList.remove('hidden-view');
+            document.getElementById('selected-course-title').textContent = `${course.code} - ${course.name}`;
+            renderCourses(); // refresh selection highlight
+            renderLogs(course.id);
+        }
+
+        document.getElementById('form-log').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if(!state.selectedCourseId) return;
+            try {
+                await addDoc(getPrivateRef('facultyLogs'), {
+                    courseId: state.selectedCourseId,
+                    date: document.getElementById('log-date').value,
+                    topic: document.getElementById('log-topic').value,
+                    notes: document.getElementById('log-notes').value,
+                    timestamp: Date.now()
+                });
+                hideModals();
+                showToast("Log saved", "success");
+            } catch(e) { showToast("Error saving log", "error"); }
+        });
+
+        function renderLogs(courseId) {
+            const container = document.getElementById('logs-list');
+            const logs = state.facultyLogs.filter(l => l.courseId === courseId).sort((a,b) => b.timestamp - a.timestamp);
+            
+            if(logs.length === 0) {
+                container.innerHTML = '<p class="text-sm italic" style="color: var(--text-secondary)">No logs for this course.</p>';
+                return;
+            }
+
+            container.innerHTML = logs.map(log => `
+                <div class="p-4 rounded-lg border bg-opacity-50" style="border-color: var(--border); background-color: var(--bg-primary)">
+                    <div class="flex justify-between mb-2">
+                        <span class="font-bold text-sm">${log.topic}</span>
+                        <span class="text-xs px-2 py-1 rounded bg-gray-200 dark:bg-gray-700">${log.date}</span>
+                    </div>
+                    <p class="text-sm whitespace-pre-wrap">${log.notes || 'No private notes.'}</p>
+                </div>
+            `).join('');
+        }
+
+        function updateCourseSelects() {
+            const options = '<option value="">General / No Course</option>' + 
+                state.courses.map(c => `<option value="${c.id}">${c.code} - ${c.name}</option>`).join('');
+            document.getElementById('mat-course').innerHTML = options;
+            document.getElementById('note-course').innerHTML = options;
+            document.getElementById('timer-course-select').innerHTML = options;
+        }
+
+        document.getElementById('form-material').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('mat-submit-btn');
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Uploading...';
+            btn.disabled = true;
+
+            const fileInput = document.getElementById('mat-file');
+            const file = fileInput.files[0];
+            const isShared = document.getElementById('mat-shared').checked;
+            
+            if(!file) { btn.disabled = false; btn.innerHTML = 'Upload'; return; }
+
+            try {
+                let downloadUrl = "";
+                if (storage) {
+                    const storageRef = ref(storage, `artifacts/${appId}/materials/${currentUser.uid}/${Date.now()}_${file.name}`);
+                    await uploadBytes(storageRef, file);
+                    downloadUrl = await getDownloadURL(storageRef);
+                } else {
+                    // Fallback if storage fails/not configured in environment
+                    downloadUrl = `https://placehold.co/600x400/1e293b/ffffff?text=${encodeURIComponent(file.name)}`;
+                }
+
+                const matData = {
+                    title: document.getElementById('mat-title').value,
+                    courseId: document.getElementById('mat-course').value,
+                    fileName: file.name,
+                    fileUrl: downloadUrl,
+                    isShared: isShared,
+                    uploaderId: currentUser.uid,
+                    uploaderName: userProfile.displayName,
+                    groupCode: isShared ? userProfile.groupCode : null,
+                    timestamp: Date.now()
+                };
+
+                // Save to private always
+                await addDoc(getPrivateRef('materials'), matData);
+                
+                // If shared, also save to public
+                if (isShared) {
+                    await addDoc(getPublicRef('materials'), matData);
+                }
+
+                hideModals();
+                showToast("Material uploaded", "success");
+            } catch(e) {
+                console.error(e);
+                showToast("Upload failed", "error");
+            } finally {
+                btn.innerHTML = 'Upload';
+                btn.disabled = false;
+            }
+        });
+
+        function renderMaterialCard(mat, isSharedView = false) {
+            const courseName = state.courses.find(c => c.id === mat.courseId)?.code || 'General';
+            return `
+                <div class="card p-4 flex flex-col">
+                    <div class="flex justify-between items-start mb-2">
+                        <div class="text-xs font-semibold px-2 py-1 rounded bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200">${courseName}</div>
+                        ${!isSharedView ? 
+                            (mat.isShared ? '<span class="text-xs text-green-500"><i class="fa-solid fa-earth-americas"></i> Shared</span>' : 
+                                            '<span class="text-xs text-gray-400"><i class="fa-solid fa-lock"></i> Private</span>') 
+                            : `<span class="text-xs" style="color: var(--text-secondary)">by ${mat.uploaderName}</span>`}
+                    </div>
+                    <h4 class="font-bold mb-1 truncate" title="${mat.title}">${mat.title}</h4>
+                    <p class="text-xs mb-4 truncate" style="color: var(--text-secondary)">${mat.fileName}</p>
+                    <div class="mt-auto">
+                        <a href="${mat.fileUrl}" target="_blank" class="btn-secondary w-full text-center text-sm py-2 block">
+                            <i class="fa-solid fa-download"></i> Open / Download
+                        </a>
+                    </div>
+                </div>
+            `;
+        }
+
+        window.renderMyMaterials = () => {
+            const container = document.getElementById('my-materials-list');
+            container.innerHTML = state.materials.length === 0 ? 
+                '<div class="col-span-full text-center py-10" style="color: var(--text-secondary)">No materials uploaded.</div>' : 
+                state.materials.map(m => renderMaterialCard(m, false)).join('');
+        };
+
+        window.renderSharedMaterials = () => {
+            const container = document.getElementById('shared-materials-list');
+            container.innerHTML = state.sharedMaterials.length === 0 ? 
+                '<div class="col-span-full text-center py-10" style="color: var(--text-secondary)">No shared materials in your group yet.</div>' : 
+                state.sharedMaterials.map(m => renderMaterialCard(m, true)).join('');
+        };
+
+        document.getElementById('form-note').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            try {
+                await addDoc(getPrivateRef('notes'), {
+                    title: document.getElementById('note-title').value,
+                    courseId: document.getElementById('note-course').value,
+                    content: document.getElementById('note-content').value,
+                    timestamp: Date.now()
+                });
+                hideModals();
+                showToast("Note saved", "success");
+            } catch(e) { showToast("Error saving note", "error"); }
+        });
+
+        window.deleteNote = async (id) => {
+            if(!confirm("Delete this note?")) return;
+            try {
+                await deleteDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'notes', id));
+                showToast("Note deleted", "success");
+            } catch(e) { showToast("Error deleting note", "error"); }
+        };
+
+        function renderNotes() {
+            const container = document.getElementById('notes-list');
+            container.innerHTML = state.notes.length === 0 ? 
+                '<div class="col-span-full text-center py-10" style="color: var(--text-secondary)">No notes created.</div>' : 
+                state.notes.sort((a,b) => b.timestamp - a.timestamp).map(note => {
+                    const courseName = state.courses.find(c => c.id === note.courseId)?.code || 'General';
+                    return `
+                    <div class="card p-4 relative group">
+                        <div class="text-xs font-semibold px-2 py-1 rounded inline-block mb-2 bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200">${courseName}</div>
+                        <h4 class="font-bold mb-2">${note.title}</h4>
+                        <p class="text-sm whitespace-pre-wrap max-h-32 overflow-y-auto custom-scroll" style="color: var(--text-secondary)">${note.content}</p>
+                        <button onclick="deleteNote('${note.id}')" class="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition text-red-500 hover:text-red-700">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </div>`;
+                }).join('');
+        }
+
+        // Study Timer Logic
+        function formatTime(totalSeconds) {
+            const h = Math.floor(totalSeconds / 3600).toString().padStart(2, '0');
+            const m = Math.floor((totalSeconds % 3600) / 60).toString().padStart(2, '0');
+            const s = (totalSeconds % 60).toString().padStart(2, '0');
+            return `${h}:${m}:${s}`;
+        }
+
+        window.startTimer = () => {
+            if (state.timer.isRunning) return;
+            state.timer.isRunning = true;
+            document.getElementById('btn-start-timer').classList.add('hidden-view');
+            document.getElementById('btn-pause-timer').classList.remove('hidden-view');
+            document.getElementById('btn-stop-timer').classList.remove('hidden-view');
+            
+            state.timer.interval = setInterval(() => {
+                state.timer.seconds++;
+                document.getElementById('timer-display').textContent = formatTime(state.timer.seconds);
+            }, 1000);
+        };
+
+        window.pauseTimer = () => {
+            state.timer.isRunning = false;
+            clearInterval(state.timer.interval);
+            document.getElementById('btn-start-timer').classList.remove('hidden-view');
+            document.getElementById('btn-start-timer').innerHTML = '<i class="fa-solid fa-play"></i> Resume';
+            document.getElementById('btn-pause-timer').classList.add('hidden-view');
+        };
+
+        window.stopTimer = async () => {
+            if (state.timer.seconds === 0) return;
+            pauseTimer();
+            const durationMins = Math.round(state.timer.seconds / 60);
+            
+            if (durationMins > 0) {
+                try {
+                    await addDoc(getPrivateRef('studySessions'), {
+                        courseId: document.getElementById('timer-course-select').value,
+                        durationMinutes: durationMins,
+                        date: new Date().toISOString().split('T')[0],
+                        timestamp: Date.now()
+                    });
+                    showToast(`Logged ${durationMins} minutes.`, "success");
+                } catch(e) { showToast("Failed to save session", "error"); }
+            } else {
+                showToast("Session too short to save (<1 min).", "info");
+            }
+
+            // Reset UI
+            state.timer.seconds = 0;
+            document.getElementById('timer-display').textContent = "00:00:00";
+            document.getElementById('btn-start-timer').innerHTML = '<i class="fa-solid fa-play"></i> Start';
+            document.getElementById('btn-stop-timer').classList.add('hidden-view');
+        };
+
+        function renderStudySessions() {
+            const tbody = document.getElementById('study-sessions-list');
+            const recent = [...state.studySessions].sort((a,b) => b.timestamp - a.timestamp).slice(0, 5);
+            
+            tbody.innerHTML = recent.length === 0 ? 
+                '<tr><td colspan="3" class="py-4 text-center text-sm" style="color: var(--text-secondary)">No sessions logged yet.</td></tr>' : 
+                recent.map(s => {
+                    const courseName = state.courses.find(c => c.id === s.courseId)?.code || 'General';
+                    return `
+                    <tr style="border-bottom: 1px solid var(--border)">
+                        <td class="py-3">${s.date}</td>
+                        <td class="py-3"><span class="px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded text-xs">${courseName}</span></td>
+                        <td class="py-3 font-medium text-accent">${s.durationMinutes} min</td>
+                    </tr>
+                `}).join('');
+        }
+
+        function renderDashboard() {
+            if(!currentUser) return;
+            
+            document.getElementById('dash-courses').textContent = state.courses.length;
+            document.getElementById('dash-shared').textContent = state.sharedMaterials.length;
+
+            // Calculate last 7 days study time
+            const today = new Date();
+            today.setHours(0,0,0,0);
+            const days = Array.from({length: 7}).map((_, i) => {
+                const d = new Date(today);
+                d.setDate(d.getDate() - i);
+                return { 
+                    dateStr: d.toISOString().split('T')[0], 
+                    label: d.toLocaleDateString('en-US', {weekday: 'short'}),
+                    mins: 0 
+                };
+            }).reverse(); // Chronological order
+
+            let weeklyTotal = 0;
+            state.studySessions.forEach(session => {
+                const dayObj = days.find(d => d.dateStr === session.date);
+                if(dayObj) {
+                    dayObj.mins += session.durationMinutes;
+                    weeklyTotal += session.durationMinutes;
+                }
+            });
+
+            document.getElementById('dash-time').textContent = `${weeklyTotal} mins`;
+
+            // Draw pure DOM Bar Chart
+            const chartContainer = document.getElementById('study-chart');
+            const labelsContainer = document.getElementById('chart-labels');
+            chartContainer.innerHTML = '';
+            labelsContainer.innerHTML = '';
+            
+            const maxMins = Math.max(...days.map(d => d.mins), 60); // min height scaling based on 60 mins
+
+            days.forEach(day => {
+                const heightPct = Math.min((day.mins / maxMins) * 100, 100);
+                
+                // Bar
+                const bar = document.createElement('div');
+                bar.className = 'chart-bar';
+                bar.style.height = `${heightPct}%`;
+                bar.setAttribute('data-value', `${day.mins}m`);
+                if(day.mins === 0) bar.style.height = '2px'; // show minimal baseline
+                chartContainer.appendChild(bar);
+
+                // Label
+                const lbl = document.createElement('div');
+                lbl.style.flex = '1';
+                lbl.style.textAlign = 'center';
+                lbl.textContent = day.label;
+                labelsContainer.appendChild(lbl);
+            });
+        }
+
+        // Kickoff
+        initAuth();
+
+    </script>
+</body>
+</html>
