@@ -193,6 +193,9 @@
                 <button id="google-login-btn" class="btn-secondary w-full flex items-center justify-center gap-2">
                     <i class="fa-brands fa-google"></i> Continue with Google
                 </button>
+                <button id="guest-login-btn" class="btn-secondary w-full flex items-center justify-center gap-2 mt-4">
+                    <i class="fa-solid fa-user-secret"></i> Continue as Guest (Local)
+                </button>
             </div>
         </div>
     </div>
@@ -448,7 +451,7 @@
     <script type="module">
         // Firebase Setup & Imports
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut, signInWithCustomToken, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, doc, setDoc, getDoc, addDoc, deleteDoc, onSnapshot, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
 
@@ -571,6 +574,15 @@
                 await signInWithPopup(auth, provider);
             } catch (error) {
                 showToast("Google sign-in failed.", 'error');
+            }
+        });
+
+        document.getElementById('guest-login-btn').addEventListener('click', async () => {
+            try {
+                await signInAnonymously(auth);
+            } catch (error) {
+                console.error(error);
+                showToast("Guest sign-in failed.", 'error');
             }
         });
 
