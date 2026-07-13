@@ -11,6 +11,7 @@
         :root {
             --bg-primary: #f8fafc;
             --bg-secondary: #ffffff;
+            --bg-glass: rgba(255, 255, 255, 0.85);
             --text-primary: #0f172a;
             --text-secondary: #475569;
             --accent: #4f46e5;
@@ -22,15 +23,20 @@
         }
 
         .dark {
-            --bg-primary: #0f172a;
-            --bg-secondary: #1e293b;
+            --bg-primary: #020617; /* Deeper, sleeker dark background */
+            --bg-secondary: #0f172a;
+            --bg-glass: rgba(15, 23, 42, 0.75); /* Semi-transparent for glass effect */
             --text-primary: #f8fafc;
             --text-secondary: #94a3b8;
-            --border: #334155;
+            --border: #1e293b;
         }
 
         body {
             background-color: var(--bg-primary);
+            background-image: 
+                radial-gradient(circle at 100% 0%, rgba(79, 70, 229, 0.08) 0%, transparent 40%),
+                radial-gradient(circle at 0% 100%, rgba(16, 185, 129, 0.05) 0%, transparent 40%);
+            background-attachment: fixed;
             color: var(--text-primary);
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
             transition: background-color 0.3s ease, color 0.3s ease;
@@ -38,33 +44,46 @@
             overflow-x: hidden;
         }
 
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--text-secondary); }
+
         /* Custom UI Elements & Smooth Transitions */
         .card {
-            background-color: var(--bg-secondary);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            background-color: var(--bg-glass);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.05); /* subtle highlight */
+            border-bottom-color: var(--border);
+            border-right-color: var(--border);
+            border-radius: 16px; /* slightly rounder */
+            box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05), 0 0 3px rgba(0,0,0,0.02);
+            transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.3s ease;
         }
         
         .card:hover {
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 12px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+            transform: translateY(-2px);
         }
 
         .input-field {
-            background-color: var(--bg-primary);
+            background-color: rgba(0,0,0,0.02);
             border: 1px solid var(--border);
             color: var(--text-primary);
-            border-radius: 8px;
+            border-radius: 10px;
             padding: 0.75rem 1rem;
             width: 100%;
-            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+            transition: all 0.2s ease;
         }
+        .dark .input-field { background-color: rgba(255,255,255,0.02); }
 
         .input-field:focus {
             outline: none;
             border-color: var(--accent);
-            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
+            background-color: transparent;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
         }
 
         .btn-primary {
@@ -90,10 +109,15 @@
             color: var(--text-primary);
             border: 1px solid var(--border);
             padding: 0.75rem 1.5rem;
-            border-radius: 8px;
+            border-radius: 10px;
             font-weight: 500;
             transition: all 0.2s ease;
             cursor: pointer;
+        }
+
+        .btn-secondary:hover { 
+            background-color: var(--border); 
+            transform: translateY(-1px);
         }
 
         .btn-secondary:hover { background-color: var(--border); }
@@ -144,13 +168,13 @@
 
         /* Layout */
         .app-layout { display: flex; height: 100vh; overflow: hidden; }
-        .sidebar { width: var(--sidebar-w); background-color: var(--bg-secondary); border-right: 1px solid var(--border); display: flex; flex-direction: column; transition: transform 0.3s ease; }
-        .main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
-        .topbar { height: 64px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 2rem; background-color: var(--bg-secondary); }
-        .content-area { flex: 1; overflow-y: auto; padding: 2rem; }
+        .sidebar { width: var(--sidebar-w); background-color: var(--bg-glass); backdrop-filter: blur(10px); border-right: 1px solid var(--border); display: flex; flex-direction: column; transition: transform 0.3s ease; z-index: 40;}
+        .main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative;}
+        .topbar { height: 64px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 2rem; background-color: transparent; backdrop-filter: blur(8px); z-index: 30;}
+        .content-area { flex: 1; overflow-y: auto; padding: 2rem; position: relative; z-index: 10;}
         
-        .nav-item { padding: 0.75rem 1.5rem; display: flex; align-items: center; gap: 1rem; color: var(--text-secondary); transition: all 0.2s ease; cursor: pointer; border-left: 3px solid transparent; }
-        .nav-item:hover, .nav-item.active { background-color: rgba(79, 70, 229, 0.05); color: var(--accent); border-left-color: var(--accent); }
+        .nav-item { padding: 0.75rem 1.5rem; margin: 0 0.5rem; border-radius: 8px; display: flex; align-items: center; gap: 1rem; color: var(--text-secondary); transition: all 0.2s ease; cursor: pointer; border-left: none; }
+        .nav-item:hover, .nav-item.active { background-color: rgba(79, 70, 229, 0.1); color: var(--accent); }
 
         /* Hide elements */
         .hidden-view { display: none !important; }
@@ -420,16 +444,29 @@
                 <select id="mat-course" class="input-field" required>
                     <option value="">Select Course</option>
                 </select>
-                <input type="file" id="mat-file" class="input-field p-2" required>
+
+                <!-- File vs Drive Link Tabs -->
+                <div class="flex bg-gray-100 dark:bg-gray-800 p-1 rounded-lg">
+                    <button type="button" id="btn-tab-file" class="flex-1 text-sm font-medium py-1.5 rounded-md bg-white dark:bg-gray-600 shadow-sm text-gray-900 dark:text-white transition cursor-default">Upload File</button>
+                    <button type="button" id="btn-tab-link" class="flex-1 text-sm font-medium py-1.5 rounded-md text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition cursor-pointer">Drive Link</button>
+                </div>
                 
-                <div class="flex items-center gap-3 p-3 border rounded-lg" style="border-color: var(--border)">
+                <!-- Inputs based on tab -->
+                <div id="upload-section">
+                    <input type="file" id="mat-file" class="input-field p-2">
+                </div>
+                <div id="link-section" class="hidden-view">
+                    <input type="url" id="mat-link" class="input-field" placeholder="https://drive.google.com/...">
+                </div>
+                
+                <div class="flex items-center gap-3 p-3 border rounded-lg bg-black/5 dark:bg-white/5" style="border-color: var(--border)">
                     <input type="checkbox" id="mat-shared" class="w-5 h-5 accent-indigo-600 cursor-pointer">
                     <div>
                         <label for="mat-shared" class="font-medium cursor-pointer">Share with Class Group</label>
-                        <p class="text-xs" style="color: var(--text-secondary)">If checked, others in your group code can download this.</p>
+                        <p class="text-xs" style="color: var(--text-secondary)">If checked, others in your group code can access this.</p>
                     </div>
                 </div>
-                <button type="submit" class="btn-primary w-full" id="mat-submit-btn">Upload</button>
+                <button type="submit" class="btn-primary w-full" id="mat-submit-btn">Add Material</button>
             </form>
         </div>
 
@@ -442,7 +479,16 @@
                 <select id="note-course" class="input-field">
                     <option value="">General (No Course)</option>
                 </select>
-                <textarea id="note-content" class="input-field" placeholder="Start typing your notes here..." rows="6" required></textarea>
+                <textarea id="note-content" class="input-field" placeholder="Start typing your notes here..." rows="5" required></textarea>
+                
+                <!-- New Drive Link Field -->
+                <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                        <i class="fa-brands fa-google-drive"></i>
+                    </div>
+                    <input type="url" id="note-link" class="input-field pl-10" placeholder="Google Drive Link (optional)">
+                </div>
+
                 <button type="submit" class="btn-primary w-full">Save Note</button>
             </form>
         </div>
@@ -542,6 +588,40 @@
             document.documentElement.classList.remove('dark');
         }
 
+        // --- Material Tabs Logic ---
+        let materialInputMode = 'file'; // 'file' or 'link'
+        const btnTabFile = document.getElementById('btn-tab-file');
+        const btnTabLink = document.getElementById('btn-tab-link');
+        const secUpload = document.getElementById('upload-section');
+        const secLink = document.getElementById('link-section');
+        const fileInput = document.getElementById('mat-file');
+        const linkInput = document.getElementById('mat-link');
+
+        btnTabFile.addEventListener('click', () => {
+            materialInputMode = 'file';
+            secUpload.classList.remove('hidden-view');
+            secLink.classList.add('hidden-view');
+            // Style active tab
+            btnTabFile.className = "flex-1 text-sm font-medium py-1.5 rounded-md bg-white dark:bg-gray-600 shadow-sm text-gray-900 dark:text-white transition cursor-default";
+            btnTabLink.className = "flex-1 text-sm font-medium py-1.5 rounded-md text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition cursor-pointer";
+            
+            // Require rules
+            linkInput.removeAttribute('required');
+        });
+
+        btnTabLink.addEventListener('click', () => {
+            materialInputMode = 'link';
+            secUpload.classList.add('hidden-view');
+            secLink.classList.remove('hidden-view');
+            // Style active tab
+            btnTabLink.className = "flex-1 text-sm font-medium py-1.5 rounded-md bg-white dark:bg-gray-600 shadow-sm text-gray-900 dark:text-white transition cursor-default";
+            btnTabFile.className = "flex-1 text-sm font-medium py-1.5 rounded-md text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition cursor-pointer";
+            
+            // Require rules
+            linkInput.setAttribute('required', 'true');
+        });
+
+
         document.getElementById('auth-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const btn = document.getElementById('auth-btn');
@@ -635,9 +715,16 @@
                 } else {
                     document.getElementById('onboarding-view').classList.remove('hidden-view');
                 }
-            } catch (e) {
+<comment-tag id="1">            } catch (e) {
                 showToast("Error checking profile.", "error");
-            }
+            }</comment-tag id="1" text="If Firestore is unavailable (e.g., missing Security Rules), the app previously got stuck on a blank screen. This update returns the user to the login screen and signs them out so they aren't trapped in a void.
+
+            } catch (e) {
+                console.error('Firestore Error:', e);
+                showToast('Database connection failed. Check Firestore rules.', 'error');
+                document.getElementById('auth-view').classList.remove('hidden-view');
+                window.logout();
+            }" type="suggestion">
         }
 
         document.getElementById('onboarding-form').addEventListener('submit', async (e) => {
@@ -803,32 +890,49 @@
         document.getElementById('form-material').addEventListener('submit', async (e) => {
             e.preventDefault();
             const btn = document.getElementById('mat-submit-btn');
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Uploading...';
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...';
             btn.disabled = true;
 
-            const fileInput = document.getElementById('mat-file');
-            const file = fileInput.files[0];
             const isShared = document.getElementById('mat-shared').checked;
-            
-            if(!file) { btn.disabled = false; btn.innerHTML = 'Upload'; return; }
+            let downloadUrl = "";
+            let finalFileName = "";
+            let isDriveLink = false;
 
             try {
-                let downloadUrl = "";
-                if (storage) {
-                    const storageRef = ref(storage, `artifacts/${appId}/materials/${currentUser.uid}/${Date.now()}_${file.name}`);
-                    await uploadBytes(storageRef, file);
-                    downloadUrl = await getDownloadURL(storageRef);
+                if (materialInputMode === 'file') {
+                    const file = fileInput.files[0];
+                    if(!file) { 
+                        showToast("Please select a file.", "error"); 
+                        btn.disabled = false; btn.innerHTML = 'Add Material'; 
+                        return; 
+                    }
+                    if (storage) {
+                        const storageRef = ref(storage, `artifacts/${appId}/materials/${currentUser.uid}/${Date.now()}_${file.name}`);
+                        await uploadBytes(storageRef, file);
+                        downloadUrl = await getDownloadURL(storageRef);
+                    } else {
+                        downloadUrl = `https://placehold.co/600x400/1e293b/ffffff?text=${encodeURIComponent(file.name)}`;
+                    }
+                    finalFileName = file.name;
                 } else {
-                    // Fallback if storage fails/not configured in environment
-                    downloadUrl = `https://placehold.co/600x400/1e293b/ffffff?text=${encodeURIComponent(file.name)}`;
+                    const linkValue = linkInput.value.trim();
+                    if(!linkValue) {
+                        showToast("Please provide a valid link.", "error");
+                        btn.disabled = false; btn.innerHTML = 'Add Material'; 
+                        return; 
+                    }
+                    downloadUrl = linkValue;
+                    finalFileName = "External Link (Drive)";
+                    isDriveLink = true;
                 }
 
                 const matData = {
                     title: document.getElementById('mat-title').value,
                     courseId: document.getElementById('mat-course').value,
-                    fileName: file.name,
+                    fileName: finalFileName,
                     fileUrl: downloadUrl,
                     isShared: isShared,
+                    isDriveLink: isDriveLink,
                     uploaderId: currentUser.uid,
                     uploaderName: userProfile.displayName,
                     groupCode: isShared ? userProfile.groupCode : null,
@@ -844,32 +948,46 @@
                 }
 
                 hideModals();
-                showToast("Material uploaded", "success");
+                showToast("Material saved!", "success");
+                fileInput.value = "";
+                linkInput.value = "";
             } catch(e) {
                 console.error(e);
-                showToast("Upload failed", "error");
+                showToast("Failed to save material.", "error");
             } finally {
-                btn.innerHTML = 'Upload';
+                btn.innerHTML = 'Add Material';
                 btn.disabled = false;
             }
         });
 
         function renderMaterialCard(mat, isSharedView = false) {
             const courseName = state.courses.find(c => c.id === mat.courseId)?.code || 'General';
+            
+            // Render different icons/buttons based on if it's a Drive Link or File
+            const iconHtml = mat.isDriveLink 
+                ? '<i class="fa-brands fa-google-drive text-blue-500"></i>' 
+                : '<i class="fa-solid fa-file-pdf text-red-400"></i>';
+            const btnText = mat.isDriveLink 
+                ? '<i class="fa-brands fa-google-drive"></i> Open Drive Link' 
+                : '<i class="fa-solid fa-download"></i> Open / Download';
+
             return `
-                <div class="card p-4 flex flex-col">
-                    <div class="flex justify-between items-start mb-2">
-                        <div class="text-xs font-semibold px-2 py-1 rounded bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200">${courseName}</div>
+                <div class="card p-5 flex flex-col group">
+                    <div class="flex justify-between items-start mb-3">
+                        <div class="text-xs font-semibold px-2 py-1 rounded bg-indigo-100 text-indigo-800 dark:bg-indigo-500/20 dark:text-indigo-200">${courseName}</div>
                         ${!isSharedView ? 
                             (mat.isShared ? '<span class="text-xs text-green-500"><i class="fa-solid fa-earth-americas"></i> Shared</span>' : 
                                             '<span class="text-xs text-gray-400"><i class="fa-solid fa-lock"></i> Private</span>') 
                             : `<span class="text-xs" style="color: var(--text-secondary)">by ${mat.uploaderName}</span>`}
                     </div>
-                    <h4 class="font-bold mb-1 truncate" title="${mat.title}">${mat.title}</h4>
-                    <p class="text-xs mb-4 truncate" style="color: var(--text-secondary)">${mat.fileName}</p>
+                    <div class="flex items-center gap-3 mb-2">
+                        <div class="text-2xl">${iconHtml}</div>
+                        <h4 class="font-bold truncate text-lg" title="${mat.title}">${mat.title}</h4>
+                    </div>
+                    <p class="text-xs mb-5 truncate" style="color: var(--text-secondary)">${mat.fileName}</p>
                     <div class="mt-auto">
                         <a href="${mat.fileUrl}" target="_blank" class="btn-secondary w-full text-center text-sm py-2 block">
-                            <i class="fa-solid fa-download"></i> Open / Download
+                            ${btnText}
                         </a>
                     </div>
                 </div>
@@ -893,10 +1011,13 @@
         document.getElementById('form-note').addEventListener('submit', async (e) => {
             e.preventDefault();
             try {
+                const driveLink = document.getElementById('note-link').value.trim();
+                
                 await addDoc(getPrivateRef('notes'), {
                     title: document.getElementById('note-title').value,
                     courseId: document.getElementById('note-course').value,
                     content: document.getElementById('note-content').value,
+                    driveLink: driveLink || null, // save if provided
                     timestamp: Date.now()
                 });
                 hideModals();
@@ -918,12 +1039,20 @@
                 '<div class="col-span-full text-center py-10" style="color: var(--text-secondary)">No notes created.</div>' : 
                 state.notes.sort((a,b) => b.timestamp - a.timestamp).map(note => {
                     const courseName = state.courses.find(c => c.id === note.courseId)?.code || 'General';
+                    const linkHtml = note.driveLink ? 
+                        `<div class="mt-4 pt-3 border-t border-gray-100 dark:border-gray-700/50">
+                            <a href="${note.driveLink}" target="_blank" class="text-xs font-medium text-accent hover:text-accent-hover inline-flex items-center gap-1">
+                                <i class="fa-brands fa-google-drive"></i> Attached Drive Link
+                            </a>
+                        </div>` : '';
+
                     return `
-                    <div class="card p-4 relative group">
-                        <div class="text-xs font-semibold px-2 py-1 rounded inline-block mb-2 bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200">${courseName}</div>
-                        <h4 class="font-bold mb-2">${note.title}</h4>
-                        <p class="text-sm whitespace-pre-wrap max-h-32 overflow-y-auto custom-scroll" style="color: var(--text-secondary)">${note.content}</p>
-                        <button onclick="deleteNote('${note.id}')" class="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition text-red-500 hover:text-red-700">
+                    <div class="card p-5 relative group">
+                        <div class="text-xs font-semibold px-2 py-1 rounded inline-block mb-3 bg-gray-100 text-gray-800 dark:bg-gray-800/80 dark:text-gray-200">${courseName}</div>
+                        <h4 class="font-bold mb-2 text-lg">${note.title}</h4>
+                        <p class="text-sm whitespace-pre-wrap max-h-40 overflow-y-auto custom-scroll" style="color: var(--text-secondary)">${note.content}</p>
+                        ${linkHtml}
+                        <button onclick="deleteNote('${note.id}')" class="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition text-red-500 hover:text-red-700 bg-red-50 dark:bg-red-500/10 p-2 rounded-full">
                             <i class="fa-solid fa-trash"></i>
                         </button>
                     </div>`;
@@ -1065,4 +1194,5 @@
 
     </script>
 </body>
+</html>
 </html>
