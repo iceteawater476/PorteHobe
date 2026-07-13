@@ -715,16 +715,23 @@
                 } else {
                     document.getElementById('onboarding-view').classList.remove('hidden-view');
                 }
-<comment-tag id="1">            } catch (e) {
-                showToast("Error checking profile.", "error");
-            }</comment-tag id="1" text="If Firestore is unavailable (e.g., missing Security Rules), the app previously got stuck on a blank screen. This update returns the user to the login screen and signs them out so they aren't trapped in a void.
-
             } catch (e) {
-                console.error('Firestore Error:', e);
-                showToast('Database connection failed. Check Firestore rules.', 'error');
+                console.error("Firestore Error:", e);
+                
+                // FIX: Bring the user back to the login screen instead of a blank void
                 document.getElementById('auth-view').classList.remove('hidden-view');
-                window.logout();
-            }" type="suggestion">
+                document.getElementById('onboarding-view').classList.add('hidden-view');
+                document.getElementById('app-view').classList.add('hidden-view');
+                
+                let errorMessage = "Database connection failed.";
+                if (e.code === 'permission-denied') {
+                    errorMessage = "Database access denied. Please check your Firestore Rules.";
+                }
+                showToast(errorMessage, "error");
+                
+                // Sign out so they aren't trapped
+                await signOut(auth);
+            }
         }
 
         document.getElementById('onboarding-form').addEventListener('submit', async (e) => {
@@ -1194,5 +1201,4 @@
 
     </script>
 </body>
-</html>
 </html>
